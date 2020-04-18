@@ -1,7 +1,7 @@
 const captcha = require("trek-captcha");
 const nodemailer = require("nodemailer");
 
-let createVerifyImg = (req, res) => {
+const createVerifyImg = (req, res) => {
   return captcha().then((info) => {
     req.session.verifyImg = info.token;
     return info.buffer;
@@ -25,7 +25,12 @@ let Email = {
   },
   get verify() {
     //返回验证码
-    return Math.random().toString().slice(-4);
+    let arrStr = "0123456789abcdefghijklmnopqrstuvwxyz"
+    let arr = arrStr.split('')
+    arr.sort(()=>{
+      return Math.random()-0.5
+    })
+    return arr.join('').slice(0,4);
   },
   get time() {
     return Date.now();

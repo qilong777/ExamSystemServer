@@ -5,7 +5,7 @@ const pool = mysql.createPool({
   user: 'root',
   password: '',
   port: '3306',
-  database: 'electronicmall',
+  database: 'examsystem',
 })
 
 const sqlQuery = (sql, values) => {
