@@ -1,8 +1,8 @@
 const db = require('../tools/db.js');
 const { createVerifyImg, Email } = require('../tools/base.js');
-
+const expireTime = 60
 //用户账号登录
-let login = async (req, res) => {
+const login = async (req, res) => {
   let { id, password, verify } = req.body;
   
   if (verify !== req.session.verifyImg) {
@@ -12,28 +12,37 @@ let login = async (req, res) => {
     });
     return;
   }
-  let sql = "select * from student where (id=? or email=?) and password=?";
-  let data = [id, id, password];
-  let result = await db.base(sql, data);
+  try {
+    let sql = "select * from student where (id=? or email=?) and password=?";
+    let data = [id, id, password];
+    let result = await db.base(sql, data);
 
-  if (result.length === 1) {
-    req.session.id = result[0].id;
-    res.send({
-      status: 1,
-      msg: "登录成功"
-    });
-    return;
-  }else{
+    if (result.length === 1) {
+      req.session.userId = result[0].id;
+      res.send({
+        status: 1,
+        msg: "登录成功"
+      });
+      return;
+    }else{
+      req.session.verifyImg = Math.random()
+      res.send({
+        status: 0,
+        msg: "登录失败"
+      });
+    }
+  } catch (error) {
     req.session.verifyImg = Math.random()
     res.send({
       status: 0,
-      msg: "登录失败"
+      msg: "未知错误"
     });
   }
+  
 }
 
 //用户邮箱登录
-let emailLogin = async (req, res) => {
+const emailLogin = async (req, res) => {
   let { email, code } = req.body;
   
   if (email !== req.session.email || code !== req.session.code) {
@@ -43,27 +52,46 @@ let emailLogin = async (req, res) => {
     });
     return;
   }
-  let sql = "select * from student where email=?";
-  let data = [email];
-  let result = await db.base(sql, data);
-
-  if (result.length === 1) {
-    req.session.id = result[0].id;
+  if ((Email.time - req.session.time) / 1000 > expireTime) {
     res.send({
-      status: 1,
-      msg: "登录成功"
+      msg: '验证码已过期，请重新发送验证码',
+      status: 0
     });
     return;
-  }else{
+  }
+  try {
+    let sql = "select * from student where email=?";
+    let data = [email];
+    let result = await db.base(sql, data);
+
+    if (result.length === 1) {
+      req.session.userId = result[0].id;
+      res.send({
+        status: 1,
+        msg: "登录成功",
+        userInfo:JSON.stringify({
+          id:result[0].id,
+          password:result[0].password
+        })
+      });
+      return;
+    }else{
+      res.send({
+        status: 0,
+        msg: "登录失败"
+      });
+    }
+  } catch (error) {
     res.send({
       status: 0,
-      msg: "登录失败"
+      msg: "未知错误"
     });
   }
+  
 }
 
 //修改密码
-let changePassword = async (req, res) => {
+const changePassword = async (req, res) => {
   let { email, code,password } = req.body;
   
   if (email !== req.session.email || code !== req.session.code) {
@@ -73,55 +101,92 @@ let changePassword = async (req, res) => {
     });
     return;
   }
-  let sql = "update student set password=? where email=?";
-  let data = [password,email];
-  let result = await db.base(sql, data);
 
-  if (result.affectedRows === 1) {
+  if ((Email.time - req.session.time) / 1000 > expireTime) {
     res.send({
-      status: 1,
-      msg: "修改密码成功"
+      msg: '验证码已过期，请重新发送验证码',
+      status: 0
     });
     return;
-  }else{
+  }
+  try {
+    let sql = "update student set password=? where email=?";
+    let data = [password,email];
+    let result = await db.base(sql, data);
+
+    if (result.affectedRows === 1) {
+      res.send({
+        status: 1,
+        msg: "修改密码成功"
+      });
+      return;
+    }else{
+      res.send({
+        status: 0,
+        msg: "修改密码失败"
+      });
+    }
+  } catch (error) {
     res.send({
       status: 0,
-      msg: "修改密码失败"
+      msg: "未知错误"
     });
   }
+  
 }
 
 
 //自动登录
-let autologin = async (req, res) => {
-  let userInfo = JSON.parse(req.cookies.userInfo)
-  let { username, password } = userInfo;
-  let sql = "select * from user where (username=? or email=?) and password=?";
-  let data = [username, username, password];
-  let result = await db.base(sql, data);
-
-  if (result.length == 1) {
-    req.session.username = username;
-    res.send({
-      status: 1,
-      msg: "登录成功"
-    });
-  } else {
+const autoLogin = async (req, res) => {
+  let userInfo
+  try {
+    userInfo = JSON.parse(req.cookies.userInfo)
+  } catch (error) {
     res.send({
       status: 0,
       msg: "用户信息失效"
     });
   }
+  
+  let { id, password } = userInfo;
 
+  try {
+    let sql = "select * from student where (id=? or email=?) and password=?";
+    let data = [id, id, password];
+    let result = await db.base(sql, data);
+
+    if (result.length == 1) {
+      req.session.userId = id;
+      res.send({
+        status: 1,
+        msg: "登录成功"
+      });
+    } else {
+      res.send({
+        status: 0,
+        msg: "用户信息失效"
+      });
+    }
+  } catch (error) {
+    res.send({
+      status: 0,
+      msg: "未知错误"
+    });
+  }
+  
 }
 
 //判断是否已经登录
-let islogined = async (req, res) => {
-  if (req.session.username) {
+const isLogined = async (req, res) => {
+  
+  let id = req.session.userId
+  if (id) {
     res.send({
       msg: "获取用户信息成功",
       status: 1,
-      data: req.session.username
+      data: {
+        id
+      }
     })
   } else {
     res.send({
@@ -132,7 +197,7 @@ let islogined = async (req, res) => {
 }
 
 //用户注册
-let register = async (req, res) => {
+const register = async (req, res) => {
   let { username, password, email, verify } = req.body;
 
   if (email !== req.session.email || verify !== req.session.verify) {
@@ -191,8 +256,8 @@ let register = async (req, res) => {
 }
 
 //退出登录
-let logout = async (req, res) => {
-  req.session.username = '';
+const logout = async (req, res) => {
+  req.session.userId = '';
   res.send({
     msg: "退出成功",
     status: 1
@@ -200,7 +265,7 @@ let logout = async (req, res) => {
 }
 
 //获取图形验证码
-let verifyImg = async (req, res) => {
+const verifyImg = async (req, res) => {
   let result = await createVerifyImg(req, res);
   if (result) {
     res.send(result);
@@ -209,33 +274,45 @@ let verifyImg = async (req, res) => {
 
 
 //发送邮箱验证码
-let sendCode = async (req, res) => {
+const sendCode = async (req, res) => {
   let email = req.query.email;
   let verify = Email.verify;
   let time = Email.time;
-  let sql = "select * from student where email=?";
-  let data = [email];
-  let result = await db.base(sql, data);
-  if (result.length !== 1) {
+
+  try {
+    let sql = "select * from student where email=?";
+    let data = [email];
+    let result = await db.base(sql, data);
+    if (result.length !== 1) {
+      res.send({
+        msg: "邮箱不存在",
+        status: 0
+      });
+      return;
+    }
+
+  } catch (error) {
     res.send({
-      msg: "邮箱不存在",
+      msg: "未知错误",
       status: 0
     });
-    return;
   }
-
-
-  req.session.code = verify;
-  req.session.email = email;
+  
   const remainTime = (time - req.session.time) / 1000
-  if (req.session.time &&  remainTime<= 60) {
+  if (req.session.time &&  remainTime<= expireTime) {
     res.send({
-      msg: "验证码已发送,请等60s再重发",
+      msg: `验证码已发送,请等${expireTime}s再重发`,
       status: 0,
-      remainTime:60-remainTime
+      remainTime:expireTime-remainTime
     });
     return;
   }
+
+  // 验证码
+  req.session.code = verify;
+  // 发送的邮箱
+  req.session.email = email;
+  
 
   let mailOptions = {
     from: '浩考 1635889910@qq.com',
@@ -263,8 +340,8 @@ module.exports = {
   login,
   emailLogin,
   changePassword,
-  autologin,
-  islogined,
+  autoLogin,
+  isLogined,
   register,
   logout,
   verifyImg,

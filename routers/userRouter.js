@@ -6,12 +6,13 @@ const service = require('../services/userService.js');
 router.post("/login", service.login);
 router.post("/emailLogin", service.emailLogin);
 router.post("/changePassword", service.changePassword);
+//判断是否已经登录
+router.get("/isLogined", service.isLogined);
 
 //自动登录
-router.post("/autologin", service.autologin);
+router.get("/autoLogin", service.autoLogin);
 
-//判断是否已经登录
-router.get("/islogined", service.islogined);
+
 
 //注册
 router.post("/register", service.register);
