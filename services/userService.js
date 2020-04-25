@@ -93,7 +93,6 @@ const emailLogin = async (req, res) => {
 //修改密码
 const changePassword = async (req, res) => {
   let { email, code,password } = req.body;
-  
   if (email !== req.session.email || code !== req.session.code) {
     res.send({
       status: 0,
