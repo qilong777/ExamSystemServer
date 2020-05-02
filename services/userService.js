@@ -84,9 +84,9 @@ const getUserInfo = async (req, res) => {
 }
 
 // 获取练习题目类型
-const getPractice = async (req, res) => {
-  // const id = req.session.userId
-  const id = '201611621123'
+const getPracticeType = async (req, res) => {
+  const id = req.session.userId
+  // const id = '201611621123'
   if(!id){
     res.send({
       status: 0,
@@ -129,10 +129,123 @@ const getPractice = async (req, res) => {
   
 }
 
+// 获取练习题目类型
+const getPracticesByIds = async (req, res) => {
+  const id = req.session.userId
+  // const id = '201611621123'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+
+  let {subjectIds,origin,num} = req.body
+
+  if(typeof subjectIds === 'string'){
+    subjectIds = JSON.parse(subjectIds)
+  }
+
+  subjectIds = `(${subjectIds.join()})`
+  
+  try {
+    let sql,data = []
+
+    if(origin === '1'){
+      sql = `
+      select t1.* 
+      from practice as t1,practice_info as t2 
+      where t2.studentId=? and t1.subjectId in ${subjectIds}
+      and t1.id = t2.practiceId and t2.isError = 1
+      order by rand()
+      limit 0,${num}
+      `;
+      data = [id,num]
+    }else if(origin === '2'){
+      sql = `
+      select * 
+      from practice
+      where id not in 
+      (select practiceId
+      from practice_info
+      where studentId=?
+      )
+      order by rand()
+      limit 0,${num}
+      `;
+      data = [id,num]
+    }else{
+      sql = `select * from practice where subjectId in ${subjectIds} order by rand()
+      limit 0,${num}`;
+      data = [num]
+    }
+    let result = await db.base(sql, data);
+    
+    req.session.practice = result
+
+    data = result.map(ele=>{
+      return {
+        question:ele.question,
+        options:ele.options
+      }
+    })
+        
+    res.send({
+      status: 1,
+      msg: "获取数据成功",
+      data
+    });
+
+  } catch (error) {
+    res.send({
+      status: 0,
+      msg: "未知错误"
+    });
+  }
+  
+}
+
+// 判断是否有练习未完成
+const hasPractice = async (req, res) => {
+  const id = req.session.userId
+  // const id = '201611621123'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  let practice = req.session.practice
+  if(practice){
+    let data = practice.map(ele=>{
+      return {
+        question:ele.question,
+        options:ele.options
+      }
+    })
+        
+    res.send({
+      status: 1,
+      msg: "有练习未做完，是否继续？",
+      data
+    });
+  }else{
+    res.send({
+      status: 0,
+      msg: ""
+    });
+  }
+  
+}
+
+
 
 
 module.exports = {
   getUserInfo,
-  getPractice
- 
+  getPracticeType,
+  getPracticesByIds,
+  hasPractice
 }
