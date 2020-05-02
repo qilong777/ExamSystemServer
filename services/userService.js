@@ -187,7 +187,8 @@ const getPracticesByIds = async (req, res) => {
     data = result.map(ele=>{
       return {
         question:ele.question,
-        options:ele.options
+        options:ele.options,
+        type:ele.type
       }
     })
         
@@ -222,7 +223,8 @@ const hasPractice = async (req, res) => {
     let data = practice.map(ele=>{
       return {
         question:ele.question,
-        options:ele.options
+        options:ele.options,
+        type:ele.type
       }
     })
         
@@ -240,12 +242,99 @@ const hasPractice = async (req, res) => {
   
 }
 
+// 获取练习结果
+const getPracticeResult = async (req, res) => {
+  const id = req.session.userId
+  // const id = '201611621123'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  try{
+    let practice = req.session.practice
+    let {answers} = req.body
+    let sql,data,isError
+      sql = `
+      select * 
+      from practice_info
+      where studentId=?
+      `
+    data = [id]
+    let result = await db.base(sql, data);
+    console.log(result);
+    
+    practice.forEach((ele,index)=>{
+      let answer
+      if(ele.type === 2){
+        answer = answers[index].sort().join('')
+      }else{
+        answer = answers[index]
+      }
+      console.log(answer);
+      
+      if(answer === ele.answer){
+        isError = 0
+      }else{
+        isError = 1
+      }
+      if(result.some(item=>item.practiceId === ele.id)){
+        sql = `
+        update practice_info 
+        set isError=?
+        where studentId=? and practiceId=?
+        `
+        data = [isError,id,ele.id]
+      }else{
+        sql = `
+        insert into practice_info(studentId,practiceId,isError)
+        VALUES(?,?,?)
+        `
+        data = [id,ele.id,isError]
+      }
+      db.base(sql, data);
+    })
+    req.session.practice = null
+    res.send({
+      status:1,
+      data:practice
+    })
+  }catch(error){
+    console.log(error);
+    res.send({
+      status: 0,
+      msg: "未知错误"
+    });
+  }
+  
+}
 
+const demo = async (req,res)=>{
+  let sql = `
+  insert into practice_info(studentId,practiceId,isError)
+  VALUES('201611621123',2,1)
+  `
+  console.log(1);
+  
+  try {
+    let result = await db.base(sql, []);
+    console.log(result);
+    
+  } catch (error) {
+    console.log(error);
+    
+  }
+  
+}
 
 
 module.exports = {
+  demo,
   getUserInfo,
   getPracticeType,
   getPracticesByIds,
-  hasPractice
+  hasPractice,
+  getPracticeResult
 }

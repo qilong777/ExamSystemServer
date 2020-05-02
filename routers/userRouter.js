@@ -13,6 +13,8 @@ router.post("/practiceInfo", service.getPracticesByIds);
 
 router.get("/hasPractice", service.hasPractice);
 
+router.post("/practiceResult", service.getPracticeResult);
 
 
+router.get("/demo", service.demo);
 module.exports = router;
