@@ -15,6 +15,9 @@ router.get("/hasPractice", service.hasPractice);
 
 router.post("/practiceResult", service.getPracticeResult);
 
+router.get("/errorPractice/:page/:pageSize", service.errorPractice);
+
+router.delete("/errorPractice/:removeId", service.removeError);
 
 router.get("/demo", service.demo);
 module.exports = router;

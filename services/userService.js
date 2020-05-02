@@ -191,12 +191,20 @@ const getPracticesByIds = async (req, res) => {
         type:ele.type
       }
     })
-        
-    res.send({
+    
+    if(data.length === 0){
+      res.send({
+        status: 0,
+        msg: "该类型题目数量为0，请重新选择",
+      });
+    }else{
+      res.send({
       status: 1,
       msg: "获取数据成功",
       data
     });
+    }
+    
 
   } catch (error) {
     res.send({
@@ -253,8 +261,18 @@ const getPracticeResult = async (req, res) => {
     });
     return;
   }
+  let practice = req.session.practice
+  if(!practice){
+    res.send({
+      status: 0,
+      msg: "响应超时"
+    });
+    return 
+  }
+  console.log(practice);
+  
   try{
-    let practice = req.session.practice
+    
     let {answers} = req.body
     let sql,data,isError
       sql = `
@@ -264,14 +282,14 @@ const getPracticeResult = async (req, res) => {
       `
     data = [id]
     let result = await db.base(sql, data);
-    console.log(result);
     
     practice.forEach((ele,index)=>{
       let answer
       if(ele.type === 2){
-        answer = answers[index].sort().join('')
+        answer = answers[index] || []
+        answer = answer.sort().join('')
       }else{
-        answer = answers[index]
+        answer = answers[index] || ''
       }
       console.log(answer);
       
@@ -283,16 +301,16 @@ const getPracticeResult = async (req, res) => {
       if(result.some(item=>item.practiceId === ele.id)){
         sql = `
         update practice_info 
-        set isError=?
+        set isError=?,answer=?
         where studentId=? and practiceId=?
         `
-        data = [isError,id,ele.id]
+        data = [isError,answer,id,ele.id]
       }else{
         sql = `
-        insert into practice_info(studentId,practiceId,isError)
-        VALUES(?,?,?)
+        insert into practice_info(studentId,practiceId,isError,answer)
+        VALUES(?,?,?,?)
         `
-        data = [id,ele.id,isError]
+        data = [id,ele.id,isError,answer]
       }
       db.base(sql, data);
     })
@@ -311,12 +329,101 @@ const getPracticeResult = async (req, res) => {
   
 }
 
+const errorPractice = async (req,res)=>{
+  const id = req.session.userId
+  // const id = '201611621123'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }  
+  let {page,pageSize} = req.params
+  
+  try {
+    let sql = `
+      select t1.id as id,t1.answer as yourAnswer,t2.answer as answer,t2.options as options,
+      t2.question as question,t2.type as type, t2.analysis as analysis,t3.name as name
+      from practice_info as t1,practice as t2,subject as t3
+      where studentId=? and isError=1 and t1.practiceId=t2.id and t2.subjectId=t3.id
+      limit ${(page-1)*pageSize},${pageSize}
+      `
+    let result = await db.base(sql, [id]);
+
+    let data = result.map(ele=>{
+      if(ele.options !== ""){
+        ele.options = ele.options.split('$$')
+      }
+      if(ele.type === 3){
+        ele.question = ele.question.replace('$$',' ____')
+      }
+      return ele
+    })
+
+    sql = `
+      select count(*) as count
+      from practice_info
+      where studentId=? and isError=1
+    `
+    result = await db.base(sql, [id]);
+    
+    res.send({
+      status:1,
+      msg:'查询错题成功',
+      data:{
+        errorList:data,
+        total:result[0].count
+      }
+    })
+    
+  } catch (error) {
+    console.log(error);
+    res.send({
+      status:0,
+      msg:'查询失败'
+    })
+  }
+}
+
+const removeError = async (req,res)=>{
+  const id = req.session.userId
+  // const id = '201611621123'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }  
+  let {removeId} = req.params
+  
+  try {
+    let sql = `
+    delete from practice_info 
+    where id=?
+    `
+    await db.base(sql, [removeId]);
+    res.send({
+      status:1,
+      msg:'删除成功'
+    })
+    
+  } catch (error) {
+    console.log(error);
+    res.send({
+      status:0,
+      msg:'删除成功'
+    })
+  }
+  
+}
+
 const demo = async (req,res)=>{
   let sql = `
   insert into practice_info(studentId,practiceId,isError)
   VALUES('201611621123',2,1)
   `
-  console.log(1);
   
   try {
     let result = await db.base(sql, []);
@@ -336,5 +443,7 @@ module.exports = {
   getPracticeType,
   getPracticesByIds,
   hasPractice,
-  getPracticeResult
+  getPracticeResult,
+  errorPractice,
+  removeError
 }
