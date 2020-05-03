@@ -1,5 +1,7 @@
 const db = require('../tools/db.js');
 const fs = require('fs')
+const { Email } = require('../tools/base.js');
+const expireTime = 60
 // 获取用户信息
 const getUserInfo = async (req, res) => {
   const id = req.session.userId
@@ -166,8 +168,134 @@ const changeUserMsg = async (req,res)=>{
 
 }
 
+const changePwd = async (req,res)=>{
+  const id = req.session.userId
+  // const id = '201611621123'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  let {pwd} = req.body
+  
+  try {
+    let sql = `
+      update student
+      set password=?
+      where id=?`;
+    let data = [pwd,id];
+    await db.base(sql, data);
+    res.send({
+      msg: "密码修改成功",
+      status: 1
+    })
+  } catch (error) {
+    res.send({
+      msg: "密码修改失败",
+      status: 0,
+    })
+  }
+
+}
+
+//用户邮箱登录
+const bindEmail = async (req, res) => {
+  const id = req.session.userId
+  // const id = '201611621123'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  let { email, code } = req.body;
+  
+  if (email !== req.session.email || code !== req.session.code) {
+    res.send({
+      status: 0,
+      msg: "邮箱或验证码错误"
+    });
+    return;
+  }
+  if ((Email.time - req.session.time) / 1000 > expireTime) {
+    res.send({
+      msg: '验证码已过期，请重新发送验证码',
+      status: 0
+    });
+    return;
+  }
+  try {
+    let sql = `update student
+              set email=?
+              where id=?`;
+    let data = [email,id];
+    await db.base(sql, data);
+
+    res.send({
+      status: 1,
+      msg: "邮箱绑定成功",
+    })
+  } catch (error) {
+    res.send({
+      status: 0,
+      msg: "邮箱绑定失败"
+    });
+  }
+  
+}
+
+//发送邮箱验证码
+const sendCode = async (req, res) => {
+  let email = req.query.email;
+  let verify = Email.verify;
+  let time = Email.time;
+  
+  const remainTime = (time - req.session.time) / 1000
+  if (req.session.time &&  remainTime<= expireTime) {
+    res.send({
+      msg: `验证码已发送,请等${expireTime}s再重发`,
+      status: 0,
+      remainTime:expireTime-remainTime
+    });
+    return;
+  }
+
+  // 验证码
+  req.session.code = verify;
+  // 发送的邮箱
+  req.session.email = email;
+  
+
+  let mailOptions = {
+    from: '浩考 1635889910@qq.com',
+    to: email,
+    subject: '浩考网邮箱验证码',
+    text: '验证码为：' + verify + ' 请不要把该验证码发送给他人'
+  }
+  Email.transporter.sendMail(mailOptions, err => {
+    if (err) {
+      res.send({
+        msg: "验证码发送失败",
+        status: 0
+      });
+    } else {
+      req.session.time = time;
+      res.send({
+        msg: "验证码发送成功",
+        status: 1
+      });
+    }
+  });
+}
+
 module.exports = {
   getUserInfo,
   uploadUserHead,
-  changeUserMsg
+  changeUserMsg,
+  changePwd,
+  bindEmail,
+  sendCode
 }

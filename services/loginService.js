@@ -28,7 +28,7 @@ const login = async (req, res) => {
       req.session.verifyImg = Math.random()
       res.send({
         status: 0,
-        msg: "登录失败"
+        msg: "用户名或密码错误"
       });
     }
   } catch (error) {

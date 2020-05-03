@@ -11,4 +11,10 @@ router.post('/uploadUserHead', upload.single('file'), service.uploadUserHead);
 
 router.put("/msg", service.changeUserMsg);
 
+router.put("/pwd", service.changePwd);
+
+router.post('/bindEmail',service.bindEmail)
+
+router.get('/sendCode',service.sendCode)
+
 module.exports = router;
