@@ -344,6 +344,95 @@ const importStudent = async (req,res) =>{
 
 }
 
+// 获取科目，练习的联动对象
+const getSubjects = async (req,res) => {
+  // const id = req.session.teacherId
+  const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  try {
+    let sql
+    sql = `
+      select * from subject
+    `
+    let subjects = await db.base(sql, []);
+    res.send({
+      status :1,
+      msg:'数据获取成功',
+      data:subjects
+    })
+  } catch (error) {
+    console.log(error);
+    
+    res.send({
+      status :0,
+      msg:'数据获取失败',
+    })
+  }
+  
+  
+}
+
+// 获取学生信息
+const getPracticeBySubjectId = async (req,res) => {
+  // const id = req.session.teacherId
+  const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  let {ids,page,pageSize} = req.body
+  
+  let where = ''
+  if(ids && ids !== ''){
+    where = `and classId in (${ids})`
+  }
+  
+  try {
+    let sql
+    sql = `
+      select t1.id as id,t1.type as type,
+      t1.question as question,t1.options as options,
+      t1.answer as answer,t1.analysis as analysis,t2.name as subjectName
+      from practice as t1,subject as t2
+      where t1.subjectId=t2.id ${where}
+      limit ${(page-1)*pageSize},${pageSize}
+    `
+    let practiceList = await db.base(sql, []);
+
+    sql = `
+      select count(*) as total
+      from practice
+      where 1=1 ${where}
+    `
+    let total = (await db.base(sql, []))[0].total
+
+    res.send({
+      status :1,
+      msg:'数据获取成功',
+      data:{
+        practiceList,
+        total
+      }
+    })
+  } catch (error) {
+    res.send({
+      status :0,
+      msg:'数据获取失败',
+    })
+  }
+  
+  
+}
+
 module.exports = {
   login,
   changePassword,
@@ -353,5 +442,7 @@ module.exports = {
   getStudentByClassId,
   removeStudent,
   changeStudent,
-  importStudent
+  importStudent,
+  getSubjects,
+  getPracticeBySubjectId
 }

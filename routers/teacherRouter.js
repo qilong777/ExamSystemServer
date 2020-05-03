@@ -24,5 +24,9 @@ router.put("/student/:id", service.changeStudent);
 
 router.post("/importStudent", upload.single('file'), service.importStudent);
 
+router.get("/getSubjects", service.getSubjects);
+
+router.post("/practice", service.getPracticeBySubjectId);
+
 
 module.exports = router;
