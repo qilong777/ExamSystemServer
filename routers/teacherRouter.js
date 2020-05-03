@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const service = require('../services/teacherService.js');
+const multer = require('multer');
+const upload = multer();
 
 //登录
 router.post("/login", service.login);
@@ -19,6 +21,8 @@ router.post("/student", service.getStudentByClassId);
 router.delete("/student/:id", service.removeStudent);
 
 router.put("/student/:id", service.changeStudent);
+
+router.post("/importStudent", upload.single('file'), service.importStudent);
 
 
 module.exports = router;

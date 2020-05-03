@@ -180,7 +180,7 @@ const getStudentByClassId = async (req,res) => {
   try {
     let sql
     sql = `
-      select t1.id as id,t1.name as name,t2.name as className,t2.id as classId,t3.id as professionId,t4.id as academyId
+      select t1.id as id,t1.sex as sex,t1.name as name,t2.name as className,t2.id as classId,t3.id as professionId,t4.id as academyId
       from student as t1,class as t2,profession as t3,academy as t4
       where t1.classId=t2.id and t2.professionId=t3.id and t3.academyId=t4.id ${where}
       limit ${(page-1)*pageSize},${pageSize}
@@ -258,15 +258,16 @@ const changeStudent = async (req,res) => {
     return;
   }
   let studentId = req.params.id
-  let {name,classId} = req.body
+  let {sex,name,classId} = req.body
+  
   try {
     let sql
     sql = `
     update student 
-    set name=?,classId=?
+    set name=?,classId=?,sex=?
     where id=?
     `
-    await db.base(sql, [name,classId,studentId]);
+    await db.base(sql, [name,classId,sex,studentId]);
     res.send({
       status :1,
       msg:'学生信息修改成功',
@@ -280,7 +281,68 @@ const changeStudent = async (req,res) => {
   
   
 }
+// 导入学生信息
+const importStudent = async (req,res) =>{
+  // const id = req.session.teacherId
+  const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  
+  try {
+    let file = req.file
+    let sql
+    const list = nodeExcel.parse(file.buffer); // 同步操作
+    let columns
+    for (let i = 0,len = list.length; i < len; i++) {
+      const data = list[i].data;
+      for (let j = 0; j < data.length; j++) {
+        const ele = data[j];
+        if(j === 0){
+          columns = `(${ele.join(',')},password)`
+        }else{
+          sql = `
+          select *
+          from student
+          where id=?
+          `
+          let result = await db.base(sql, [ele[0]]);
+          if(result.length>0){
+            sql = `
+            update student 
+            set name=?,sex=?,classId=?
+            where id=?
+            `
+            await db.base(sql, [ele[1],ele[2],ele[3],ele[0]]);
+          }else{
+            sql = `
+            insert into student${columns}
+            VALUES(?,?,?,?,'e10adc3949ba59abbe56e057f20f883e')
+            `
+            await db.base(sql, [...ele]);
+          }
+        }
+      }
+    }
+    res.send({
+      status:1,
+      msg:'学生数据上传成功'
+    })
+  } catch (error) {
+    console.log(error);
+    
+    res.send({
+      status:0,
+      msg:'数据上传异常，可能有一些数据没有上传成功'
+    })
+  }
+  
 
+}
 
 module.exports = {
   login,
@@ -290,5 +352,6 @@ module.exports = {
   getClassTree,
   getStudentByClassId,
   removeStudent,
-  changeStudent
+  changeStudent,
+  importStudent
 }

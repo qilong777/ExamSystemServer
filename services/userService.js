@@ -100,7 +100,13 @@ const uploadUserHead = async (req, res) => {
   try {
     // var imgType = "." + req.file.mimetype.substring(6);
     let file = req.file
-
+    if(file.mimetype!== 'image/jpeg' && file.mimetype!== 'image/png'){
+      res.send({
+        msg: "文件格式错误",
+        status: 0,
+      })
+      return
+    }
     let index = file.originalname.lastIndexOf('.')
     let imgType = file.originalname.slice(index);
     let filename = id + imgType

@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const service = require('../services/userService.js');
-var multer = require('multer');
-var upload = multer({ dest: 'public/headImg/' });
+const multer = require('multer');
+const upload = multer({ dest: 'public/headImg/' });
 
 // 获取用户信息
 router.get("/userInfo", service.getUserInfo);
