@@ -17,4 +17,8 @@ router.post('/bindEmail',service.bindEmail)
 
 router.get('/sendCode',service.sendCode)
 
+router.put("/message/:id", service.readMessage);
+
+router.delete("/message/:id", service.removeMessage);
+
 module.exports = router;

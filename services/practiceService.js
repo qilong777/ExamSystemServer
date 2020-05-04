@@ -186,7 +186,6 @@ const getPracticeResult = async (req, res) => {
     });
     return 
   }
-  console.log(practice);
   
   try{
     
@@ -210,7 +209,7 @@ const getPracticeResult = async (req, res) => {
       }
       console.log(answer);
       
-      if(answer === ele.answer){
+      if(answer+"" === ele.answer + ""){
         isError = 0
       }else{
         isError = 1

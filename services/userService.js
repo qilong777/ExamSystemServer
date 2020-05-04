@@ -58,15 +58,22 @@ const getUserInfo = async (req, res) => {
       where t2.studentId=? and t1.id=t2.examId and t1.subjectId=t3.id
       `
       data = [id]
-      result = await db.base(sql, data)
-      
+      let exam = await db.base(sql, data)
+
+      sql = `
+      select t1.content as content,t2.id as id,t2.isRead as isRead
+      from message as t1,message_info as t2
+      where t1.id=t2.messageId and t2.studentId=?
+      `
+      data = [id]
+      let message = await db.base(sql, data)
       res.send({
         status: 1,
         msg: "获取用户信息成功",
         data:{
           id,email,name,sex,className,professionName,
           academyName,headImg,practiceNum,errorNum,correctNum,
-          exam:result,msg
+          exam,message,msg
         }
       });
 
@@ -297,11 +304,80 @@ const sendCode = async (req, res) => {
   });
 }
 
+const removeMessage = async (req,res)=>{
+  const id = req.session.userId
+  // const id = '201611621123'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  
+  try {
+    let infoId = req.params.id
+    let sql = `
+      delete from message_info
+      where id=?`;
+    let data = [infoId];
+    await db.base(sql, data);
+    res.send({
+      msg: "消息删除成功",
+      status: 1
+    })
+  } catch (error) {
+    res.send({
+      msg: "消息删除失败",
+      status: 0,
+    })
+  }
+
+}
+
+const readMessage = async (req,res)=>{
+  const id = req.session.userId
+  // const id = '201611621123'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  
+  try {
+    let infoId = req.params.id
+    let sql = `
+      update message_info
+      set isRead=1
+      where id=?`;
+    let data = [infoId];
+    await db.base(sql, data);
+    res.send({
+      status: 1,
+      msg: "设置成功",
+      
+    })
+  } catch (error) {
+    console.log(error);
+    
+    res.send({
+      status: 0,
+      msg: "设置失败",
+      
+    })
+  }
+
+}
+
 module.exports = {
   getUserInfo,
   uploadUserHead,
   changeUserMsg,
   changePwd,
   bindEmail,
-  sendCode
+  sendCode,
+  readMessage,
+  removeMessage
 }

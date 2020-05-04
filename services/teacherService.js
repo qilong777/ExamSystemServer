@@ -576,7 +576,7 @@ const getExamByClassIds = async (req,res) => {
     let len1 = idArr.length
     let sql
     sql = `
-      select t1.id as id,t1.classIds as classIds,t2.name as subjectName,t1.filePath as filePath,t2.id as subjectId
+      select t1.time as time,t1.id as id,t1.classIds as classIds,t2.name as subjectName,t1.filePath as filePath,t2.id as subjectId
       from exam as t1,subject as t2
       where t1.subjectId=t2.id
     `
@@ -669,7 +669,8 @@ const changeExam = async (req,res) => {
   }
 
   try {
-    let {subjectId, classIds} = req.body
+    let {subjectId, classIds,time} = req.body
+    time = Number(time)
     let examId = req.body.id
     let file = req.file
     let sql
@@ -714,10 +715,10 @@ const changeExam = async (req,res) => {
     
     sql = `
     update exam 
-    set subjectId=?,classIds=?,filePath=?
+    set subjectId=?,classIds=?,filePath=?,time=?
     where id=?
     `
-    await db.base(sql, [subjectId,classIds,fileName,examId]);
+    await db.base(sql, [subjectId,classIds,fileName,time,examId]);
     res.send({
       status:1,
       msg:'修改考试信息成功'
@@ -745,8 +746,9 @@ const addExam = async (req,res) => {
   }
 
   try {
-    let {subjectId, classIds} = req.body
+    let {subjectId, classIds,time} = req.body
     let file = req.file
+    time = Number(time)
     
 
     if(!file || file.mimetype!== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
@@ -772,17 +774,38 @@ const addExam = async (req,res) => {
     });
     
     sql = `
-    insert into exam(subjectId,classIds,filePath)
-    value(?,?,?)
+    insert into exam(subjectId,classIds,filePath,time)
+    value(?,?,?,?)
     `
-    await db.base(sql, [subjectId,classIds,fileName]);
+    await db.base(sql, [subjectId,classIds,fileName,time]);
 
     sql = `
-    insert into message(content,classIds)
-    value(?,?)
+    insert into message(content)
+    value(?)
     `
-    let content = `${subjectName}考试已发布，请需要参加考试的同学们尽快完成考试`
-    await db.base(sql,[content,classIds])
+    let content = `${subjectName}考试已发布，考试时长${time}分钟，请需要参加考试的同学们尽快完成考试`
+    let result = await db.base(sql,[content])
+    let messageId = result.insertId
+    
+
+    sql = `
+      select id
+      from student
+      where classId in (${classIds})
+    `
+
+    result = await db.base(sql,[])
+
+    for (let i = 0,len=result.length; i < len; i++) {
+      const ele = result[i];
+      sql = `
+      insert into message_info(studentId,messageId)
+      value(?,?)
+      `
+      await db.base(sql,[ele.id,messageId])
+    }
+
+    
 
     res.send({
       status:1,
@@ -790,8 +813,10 @@ const addExam = async (req,res) => {
     })
     
   } catch (error) {
+    console.log(error);
+    
     res.send({
-      status:1,
+      status:0,
       msg:'添加考试信息失败'
     })
   }

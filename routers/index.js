@@ -4,6 +4,7 @@ const router = express.Router();
 const loginRouter = require('./loginRouter')
 const userRouter = require('./userRouter')
 const practiceRouter = require('./practiceRouter')
+const examRouter = require('./examRouter')
 
 const teacherRouter = require('./teacherRouter')
 
@@ -11,6 +12,8 @@ const teacherRouter = require('./teacherRouter')
 router.use('/login', loginRouter);
 router.use('/user', userRouter);
 router.use('/practice', practiceRouter);
+
+router.use('/exam', examRouter);
 
 router.use('/teacher', teacherRouter);
 
