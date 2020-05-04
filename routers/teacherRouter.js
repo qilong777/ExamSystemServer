@@ -28,5 +28,11 @@ router.get("/getSubjects", service.getSubjects);
 
 router.post("/practice", service.getPracticeBySubjectId);
 
+router.delete("/practice/:id", service.removePractice);
+
+
+router.put("/practice/:id", service.changePractice);
+
+router.post("/importPractice", upload.single('file'), service.importPractice);
 
 module.exports = router;

@@ -378,7 +378,7 @@ const getSubjects = async (req,res) => {
   
 }
 
-// 获取学生信息
+// 获取练习信息
 const getPracticeBySubjectId = async (req,res) => {
   // const id = req.session.teacherId
   const id = '10086'
@@ -390,17 +390,18 @@ const getPracticeBySubjectId = async (req,res) => {
     return;
   }
   let {ids,page,pageSize} = req.body
+  console.log(ids);
   
   let where = ''
   if(ids && ids !== ''){
-    where = `and classId in (${ids})`
+    where = `and subjectId in (${ids})`
   }
   
   try {
     let sql
     sql = `
       select t1.id as id,t1.type as type,
-      t1.question as question,t1.options as options,
+      t1.question as question,t1.options as options,t2.id as subjectId,
       t1.answer as answer,t1.analysis as analysis,t2.name as subjectName
       from practice as t1,subject as t2
       where t1.subjectId=t2.id ${where}
@@ -433,6 +434,124 @@ const getPracticeBySubjectId = async (req,res) => {
   
 }
 
+// 根据id删除练习信息
+const removePractice = async (req,res) => {
+  // const id = req.session.teacherId
+  const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  let practiceId = req.params.id
+  
+  try {
+    let sql
+    sql = `
+    delete from practice 
+    where id=?
+    `
+    await db.base(sql, [practiceId]);
+    res.send({
+      status :1,
+      msg:'练习信息删除成功',
+    })
+  } catch (error) {
+    res.send({
+      status :0,
+      msg:'练习信息删除失败',
+    })
+  }
+  
+  
+}
+
+// 根据id修改练习信息
+const changePractice = async (req,res) => {
+  // const id = req.session.teacherId
+  const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  let practiceId = req.params.id
+  let {subjectId,type,question,options,answer,analysis} = req.body
+  console.log(subjectId,type,question,options,answer,analysis);
+  
+  try {
+    let sql
+    sql = `
+    update practice 
+    set subjectId=?,type=?,question=?,options=?,answer=?,analysis=?
+    where id=?
+    `
+    await db.base(sql, [subjectId,type,question,options,answer,analysis,practiceId]);
+    res.send({
+      status :1,
+      msg:'习题信息修改成功',
+    })
+  } catch (error) {
+    res.send({
+      status :0,
+      msg:'习题信息修改失败',
+    })
+  }
+  
+  
+}
+// 导入学生信息
+const importPractice = async (req,res) =>{
+  // const id = req.session.teacherId
+  const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  
+  try {
+    let file = req.file
+    let sql
+    const list = nodeExcel.parse(file.buffer); // 同步操作
+    let columns
+    for (let i = 0,len = list.length; i < len; i++) {
+      const data = list[i].data;
+      for (let j = 0; j < data.length; j++) {
+        const ele = data[j];
+        if(j === 0){
+          columns = `(${ele.join(',')})`
+        }else{
+          sql = `
+          insert into practice${columns}
+          VALUES(?,?,?,?,?,?)
+          `
+          await db.base(sql, [...ele]);
+        }
+      }
+    }
+    res.send({
+      status:1,
+      msg:'习题数据上传成功'
+    })
+  } catch (error) {
+    console.log(error);
+    
+    res.send({
+      status:0,
+      msg:'数据上传异常，可能有一些数据没有上传成功'
+    })
+  }
+  
+
+}
+
 module.exports = {
   login,
   changePassword,
@@ -444,5 +563,8 @@ module.exports = {
   changeStudent,
   importStudent,
   getSubjects,
-  getPracticeBySubjectId
+  getPracticeBySubjectId,
+  removePractice,
+  changePractice,
+  importPractice
 }
