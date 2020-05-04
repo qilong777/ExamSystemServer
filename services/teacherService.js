@@ -21,7 +21,13 @@ const login = async (req, res) => {
       req.session.teacherId = result[0].id;
       res.send({
         status: 1,
-        msg: "登录成功"
+        msg: "登录成功",
+        data:{
+          userInfo:{
+            id:result[0].id,
+            name:result[0].name
+          }
+        }
       });
       return;
     }else{
@@ -75,8 +81,8 @@ const changePassword = async (req,res)=>{
 
 //判断是否已经登录
 const isLogined = async (req, res) => {
-  const id = '10086'
-  // const id = req.session.teacherId
+  // const id = '10086'
+  const id = req.session.teacherId
   if (id) {
     res.send({
       msg: "获取用户信息成功",
@@ -105,8 +111,8 @@ const logout = async (req, res) => {
 
 // 获取学院，专业，班级的大联动对象
 const getClassTree = async (req,res) => {
-  // const id = req.session.teacherId
-  const id = '10086'
+  const id = req.session.teacherId
+  // const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -161,8 +167,8 @@ const getClassTree = async (req,res) => {
 
 // 获取学生信息
 const getStudentByClassId = async (req,res) => {
-  // const id = req.session.teacherId
-  const id = '10086'
+  const id = req.session.teacherId
+  // const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -214,8 +220,8 @@ const getStudentByClassId = async (req,res) => {
 
 // 根据id删除学生信息
 const removeStudent = async (req,res) => {
-  // const id = req.session.teacherId
-  const id = '10086'
+  const id = req.session.teacherId
+  // const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -248,8 +254,8 @@ const removeStudent = async (req,res) => {
 
 // 根据id修改学生信息
 const changeStudent = async (req,res) => {
-  // const id = req.session.teacherId
-  const id = '10086'
+  const id = req.session.teacherId
+  // const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -283,8 +289,8 @@ const changeStudent = async (req,res) => {
 }
 // 导入学生信息
 const importStudent = async (req,res) =>{
-  // const id = req.session.teacherId
-  const id = '10086'
+  const id = req.session.teacherId
+  // const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -346,8 +352,8 @@ const importStudent = async (req,res) =>{
 
 // 获取科目，练习的联动对象
 const getSubjects = async (req,res) => {
-  // const id = req.session.teacherId
-  const id = '10086'
+  const id = req.session.teacherId
+  // const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -380,8 +386,8 @@ const getSubjects = async (req,res) => {
 
 // 获取练习信息
 const getPracticeBySubjectId = async (req,res) => {
-  // const id = req.session.teacherId
-  const id = '10086'
+  const id = req.session.teacherId
+  // const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -436,8 +442,8 @@ const getPracticeBySubjectId = async (req,res) => {
 
 // 根据id删除练习信息
 const removePractice = async (req,res) => {
-  // const id = req.session.teacherId
-  const id = '10086'
+  const id = req.session.teacherId
+  // const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -470,8 +476,8 @@ const removePractice = async (req,res) => {
 
 // 根据id修改练习信息
 const changePractice = async (req,res) => {
-  // const id = req.session.teacherId
-  const id = '10086'
+  const id = req.session.teacherId
+  // const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -504,10 +510,10 @@ const changePractice = async (req,res) => {
   
   
 }
-// 导入学生信息
+// 导入练习信息
 const importPractice = async (req,res) =>{
-  // const id = req.session.teacherId
-  const id = '10086'
+  const id = req.session.teacherId
+  // const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -552,6 +558,245 @@ const importPractice = async (req,res) =>{
 
 }
 
+// 获取考试信息
+const getExamByClassIds = async (req,res) => {
+  const id = req.session.teacherId
+  // const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  try {
+    let {ids,page,pageSize} = req.body
+    
+    idArr = ids.split(',')
+    let len1 = idArr.length
+    let sql
+    sql = `
+      select t1.id as id,t1.classIds as classIds,t2.name as subjectName,t1.filePath as filePath,t2.id as subjectId
+      from exam as t1,subject as t2
+      where t1.subjectId=t2.id
+    `
+
+    let result = await db.base(sql, []);
+    
+    let examList
+    if(!ids || ids === ''){
+      examList = result
+    }else{
+      examList = []
+      result.forEach(ele=>{
+      let eleClassIds = ele.classIds.split(',')
+      let len2 = eleClassIds.length
+      let set = new Set([...eleClassIds,...idArr])
+      
+      if(set.size < len1+len2){    
+        examList.push(ele)
+      }
+    })
+    }
+    let total = examList.length
+
+    let startIndex = (page-1)*pageSize
+    let endIndex = startIndex + pageSize
+    examList = examList.slice(startIndex,endIndex)
+
+    res.send({
+      status :1,
+      msg:'数据获取成功',
+      data:{
+        examList,
+        total
+      }
+    })
+  } catch (error) {
+    res.send({
+      status :0,
+      msg:'数据获取失败',
+    })
+  }
+  
+  
+}
+
+// 根据id删除考试信息
+const removeExam = async (req,res) => {
+  const id = req.session.teacherId
+  // const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  let practiceId = req.params.id
+  
+  try {
+    let sql
+    sql = `
+    delete from exam 
+    where id=?
+    `
+    await db.base(sql, [practiceId]);
+    res.send({
+      status :1,
+      msg:'练习信息删除成功',
+    })
+  } catch (error) {
+    res.send({
+      status :0,
+      msg:'练习信息删除失败',
+    })
+  }
+  
+  
+}
+
+// 根据id修改考试信息
+const changeExam = async (req,res) => {
+  const id = req.session.teacherId
+  // const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+
+  try {
+    let {subjectId, classIds} = req.body
+    let examId = req.body.id
+    let file = req.file
+    let sql
+    sql = `
+    select name 
+    from subject
+    where id=?
+    `
+    let fileName = (await db.base(sql, [subjectId]))[0].name + '.xlsx';
+
+    let oldName
+    if(!file){
+      sql = `
+      select filePath 
+      from exam
+      where id=?
+      `
+      let result = await db.base(sql, [examId]);
+      oldName = result[0].filePath
+    }else{
+      
+      if(file.mimetype!== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
+        res.send({
+          msg: "文件格式错误",
+          status: 0,
+        })
+        return
+      }
+      oldName = file.filename
+    }
+    await fs.rename("public/exam/" + oldName, `public/exam/${fileName}`,err=>{
+      if(err){
+        res.send({
+          status:0,
+          msg:'修改考试信息失败'
+        })
+        
+      }
+    });
+
+    
+    
+    sql = `
+    update exam 
+    set subjectId=?,classIds=?,filePath=?
+    where id=?
+    `
+    await db.base(sql, [subjectId,classIds,fileName,examId]);
+    res.send({
+      status:1,
+      msg:'修改考试信息成功'
+    })
+    
+  } catch (error) {
+    console.log(err);
+    
+    res.send({
+      status:0,
+      msg:'修改考试信息失败'
+    })
+  }
+}
+
+const addExam = async (req,res) => {
+  const id = req.session.teacherId
+  // const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+
+  try {
+    let {subjectId, classIds} = req.body
+    let file = req.file
+    
+
+    if(!file || file.mimetype!== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
+      res.send({
+        msg: "文件格式错误",
+        status: 0,
+      })
+      return
+    }
+    let sql = `
+      select name
+      from subject
+      where id=?
+    `
+
+
+    let subjectName = (await db.base(sql, [subjectId]))[0].name
+    let fileName = subjectName + '.xlsx';
+    await fs.rename("public/exam/" + file.filename, `public/exam/${fileName}`,err=>{
+      if(err){
+        throw err
+      }
+    });
+    
+    sql = `
+    insert into exam(subjectId,classIds,filePath)
+    value(?,?,?)
+    `
+    await db.base(sql, [subjectId,classIds,fileName]);
+
+    sql = `
+    insert into message(content,classIds)
+    value(?,?)
+    `
+    let content = `${subjectName}考试已发布，请需要参加考试的同学们尽快完成考试`
+    await db.base(sql,[content,classIds])
+
+    res.send({
+      status:1,
+      msg:'添加考试信息成功'
+    })
+    
+  } catch (error) {
+    res.send({
+      status:1,
+      msg:'添加考试信息失败'
+    })
+  }
+}
+
 module.exports = {
   login,
   changePassword,
@@ -566,5 +811,9 @@ module.exports = {
   getPracticeBySubjectId,
   removePractice,
   changePractice,
-  importPractice
+  importPractice,
+  getExamByClassIds,
+  removeExam,
+  changeExam,
+  addExam
 }
