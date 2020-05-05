@@ -57,6 +57,20 @@ const getAllExam = async (req, res) => {
   
 }
 
+
+const getScore = async (id,examId) =>{
+  try {
+    let sql = `
+    insert into exam_info(studentId,examId,score)
+    value(?,?,?)
+    `
+    await db.base(sql,[id,examId,0])
+    
+  }catch(err){
+    console.log(err);
+    
+  }
+}
 // 获取练习题目类型
 const getExamInfoById = async (req, res) => {
   const id = req.session.userId
@@ -72,15 +86,15 @@ const getExamInfoById = async (req, res) => {
     let examId = req.params.id
     
     let sql = `
-    select filePath
+    select filePath,time
     from exam
     where id=?
     `;
     let result = await db.base(sql, [examId]);
-    let filePath = result[0].filePath
-
+    let {filePath,time} = result[0]
+    time = (time+5) *60*1000
     let list = nodeExcel.parse(`public/exam/${filePath}`); // 同步操作
-    console.log(list);
+
     
     list = list[0].data
     
@@ -112,6 +126,15 @@ const getExamInfoById = async (req, res) => {
         score:ele.score
       }
     })
+
+    let timer = setInterval(()=>{
+      time-=10000
+      if(time<=0 || !req.session.exam){
+        getScore(id,examId)
+        clearInterval(timer)
+        timer = null
+      }
+    },1000)
     
     res.send({
       status: 1,
@@ -143,8 +166,8 @@ const getExamResult = async (req, res) => {
     });
     return;
   }
-  let exam = req.session.exam.examInfo
-  let examId = req.session.exam.examId
+  let exam = req.session.exam
+  
   if(!exam){
     res.send({
       status: 0,
@@ -152,10 +175,12 @@ const getExamResult = async (req, res) => {
     });
     return 
   }
+  let examInfo = req.session.exam.examInfo
+  let examId = req.session.exam.examId
   try {
     let scores = 0
     let {answers} = req.body
-    exam.forEach((ele,index)=>{
+    examInfo.forEach((ele,index)=>{
       let answer
       if(ele.type === 2){
         answer = answers[index] || []
@@ -180,6 +205,7 @@ const getExamResult = async (req, res) => {
     where t1.id=? and t1.subjectId=t2.id
     `
     let examName = (await db.base(sql,[examId]))[0].subjectName
+    req.session.exam = null
     res.send({
       status: 1,
       msg: "试卷提交成功",
@@ -187,7 +213,7 @@ const getExamResult = async (req, res) => {
         result:`考试完成，${examName}得分${scores}`
       }
     });
-   req.session.exam = null
+   
   } catch (error) {
     console.log(error);
     
@@ -198,6 +224,8 @@ const getExamResult = async (req, res) => {
   }
   
 }
+
+
 
 
 module.exports = {
