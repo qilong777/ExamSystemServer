@@ -92,7 +92,7 @@ const getExamInfoById = async (req, res) => {
     `;
     let result = await db.base(sql, [examId]);
     let {filePath,time} = result[0]
-    time = (time+5) *60*1000
+    time = (time+1) *60*1000
     let list = nodeExcel.parse(`public/exam/${filePath}`); // 同步操作
 
     
@@ -128,7 +128,7 @@ const getExamInfoById = async (req, res) => {
     })
 
     let timer = setInterval(()=>{
-      time-=10000
+      time-=1000
       if(time<=0 || !req.session.exam){
         getScore(id,examId)
         clearInterval(timer)
