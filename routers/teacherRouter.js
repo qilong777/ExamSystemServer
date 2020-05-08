@@ -45,4 +45,9 @@ router.post("/changeExam",upload1.single('file'), service.changeExam);
 
 router.post("/addExam",upload1.single('file'), service.addExam);
 
+router.post("/score", service.getScore);
+
+router.delete("/score/:studentId/:examId", service.removeScore);
+
+router.put("/score/:studentId/:examId", service.changeScore);
 module.exports = router;

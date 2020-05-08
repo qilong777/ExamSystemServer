@@ -81,8 +81,8 @@ const changePassword = async (req,res)=>{
 
 //判断是否已经登录
 const isLogined = async (req, res) => {
-  // const id = '10086'
-  const id = req.session.teacherId
+  const id = '10086'
+  // const id = req.session.teacherId
   if (id) {
     res.send({
       msg: "获取用户信息成功",
@@ -111,8 +111,8 @@ const logout = async (req, res) => {
 
 // 获取学院，专业，班级的大联动对象
 const getClassTree = async (req,res) => {
-  const id = req.session.teacherId
-  // const id = '10086'
+  // const id = req.session.teacherId
+  const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -352,8 +352,8 @@ const importStudent = async (req,res) =>{
 
 // 获取科目，练习的联动对象
 const getSubjects = async (req,res) => {
-  const id = req.session.teacherId
-  // const id = '10086'
+  // const id = req.session.teacherId
+  const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -822,6 +822,153 @@ const addExam = async (req,res) => {
   }
 }
 
+// 获取学生信息
+const getScore = async (req,res) => {
+  // const id = req.session.teacherId
+  const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  let {classIds,subjectIds,page,pageSize} = req.body
+  console.log(classIds,subjectIds,page,pageSize);
+
+  let noClassIds = false,noSubjectIds  = false
+  if(classIds === ""){
+    noClassIds = true
+  }
+
+  if(subjectIds === ""){
+    noSubjectIds = true
+  }
+
+  
+  
+  try {
+    let sql
+    sql = `
+    select 
+    t4.name as className,
+    t1.studentId as studentId,
+    t5.name as name,
+    t3.name as subjectName,
+    t1.score as score,
+    t1.examId as examId,
+    t4.id as classId,
+    t3.id as subjectId
+    from exam_info as t1,exam as t2,subject as t3,class as t4,student as t5
+    where t1.studentId=t5.id and t2.subjectId=t3.id and t1.examId=t2.id and t4.id=t5.classId
+    `
+    // limit ${(page-1)*pageSize},${pageSize}
+    let scoreList = await db.base(sql, []);
+
+    classIds = classIds.split(',')
+    subjectIds = subjectIds.split(',')
+
+
+    scoreList = scoreList.filter(ele=>{
+      if(!noClassIds && classIds.indexOf(ele.classId + "") === -1){
+        return false
+      }
+      
+      
+      if(!noSubjectIds && subjectIds.indexOf(ele.subjectId + "") === -1){        
+        return false
+      }
+      return true
+    })
+
+    let total = scoreList.length
+
+    scoreList = scoreList.slice((page-1)*pageSize,page*pageSize)
+
+    res.send({
+      status :1,
+      msg:'数据获取成功',
+      data:{
+        scoreList,
+        total
+      }
+    })
+  } catch (error) {
+    res.send({
+      status :0,
+      msg:'数据获取失败',
+    })
+  }
+  
+  
+}
+
+// 根据id删除考试信息
+const removeScore = async (req,res) => {
+  // const id = req.session.teacherId
+  const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  let {studentId,examId} = req.params
+  
+  try {
+    let sql
+    sql = `
+    delete from exam_info
+    where studentId=? and examId=?
+    `
+    await db.base(sql, [studentId,examId]);
+    res.send({
+      status :1,
+      msg:'成绩信息删除成功',
+    })
+  } catch (error) {
+    res.send({
+      status :0,
+      msg:'成绩信息删除失败',
+    })
+  }
+}
+
+// 根据id修改考试信息
+const changeScore = async (req,res) => {
+  // const id = req.session.teacherId
+  const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  let {studentId,examId} = req.params
+  let {score} = req.body
+  
+  try {
+    let sql
+    sql = `
+    update exam_info
+    set score=?
+    where studentId=? and examId=?
+    `
+    await db.base(sql, [score,studentId,examId]);
+    res.send({
+      status :1,
+      msg:'成绩信息修改成功',
+    })
+  } catch (error) {
+    res.send({
+      status :0,
+      msg:'成绩信息修改失败',
+    })
+  }
+}
+
 module.exports = {
   login,
   changePassword,
@@ -840,5 +987,8 @@ module.exports = {
   getExamByClassIds,
   removeExam,
   changeExam,
-  addExam
+  addExam,
+  getScore,
+  removeScore,
+  changeScore
 }
