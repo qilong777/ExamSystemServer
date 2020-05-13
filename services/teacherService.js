@@ -81,8 +81,8 @@ const changePassword = async (req,res)=>{
 
 //判断是否已经登录
 const isLogined = async (req, res) => {
-  const id = '10086'
-  // const id = req.session.teacherId
+  // const id = '10086'
+  const id = req.session.teacherId
   if (id) {
     res.send({
       msg: "获取用户信息成功",
@@ -111,8 +111,8 @@ const logout = async (req, res) => {
 
 // 获取学院，专业，班级的大联动对象
 const getClassTree = async (req,res) => {
-  // const id = req.session.teacherId
-  const id = '10086'
+  const id = req.session.teacherId
+  // const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -352,8 +352,8 @@ const importStudent = async (req,res) =>{
 
 // 获取科目，练习的联动对象
 const getSubjects = async (req,res) => {
-  // const id = req.session.teacherId
-  const id = '10086'
+  const id = req.session.teacherId
+  // const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -824,8 +824,8 @@ const addExam = async (req,res) => {
 
 // 获取学生信息
 const getScore = async (req,res) => {
-  // const id = req.session.teacherId
-  const id = '10086'
+  const id = req.session.teacherId
+  // const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -905,8 +905,8 @@ const getScore = async (req,res) => {
 
 // 根据id删除考试信息
 const removeScore = async (req,res) => {
-  // const id = req.session.teacherId
-  const id = '10086'
+  const id = req.session.teacherId
+  // const id = '10086'
   if(!id){
     res.send({
       status: 0,
@@ -937,8 +937,8 @@ const removeScore = async (req,res) => {
 
 // 根据id修改考试信息
 const changeScore = async (req,res) => {
-  // const id = req.session.teacherId
-  const id = '10086'
+  const id = req.session.teacherId
+  // const id = '10086'
   if(!id){
     res.send({
       status: 0,
