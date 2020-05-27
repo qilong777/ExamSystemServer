@@ -734,6 +734,77 @@ const changeExam = async (req,res) => {
   }
 }
 
+// 获取练习题目类型
+const getExamInfoById = async (req, res) => {
+  const id = req.session.teacherId
+  // const id = '201611621123'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }  
+  try {
+    let examId = req.params.id
+    
+    let sql = `
+    select filePath
+    from exam
+    where id=?
+    `;
+    let result = await db.base(sql, [examId]);
+    let {filePath} = result[0]
+    
+    let list = nodeExcel.parse(`public/exam/${filePath}`); // 同步操作
+
+    
+    list = list[0].data
+    
+    let examInfo = []
+    let key = []
+    for (let i = 0,len = list.length; i < len; i++) {
+      const ele = list[i];
+      if(i === 0){
+        key = ele
+        continue
+      }
+      let obj = {}
+      for (let j = 0; j < ele.length; j++) {
+        const item = ele[j];
+        obj[key[j]] = item
+      }
+      examInfo.push(obj)
+    }
+
+    examInfo = examInfo.map(ele=>{
+      return {
+        type:ele.type,
+        question:ele.question,
+        options:ele.options||'',
+        score:ele.score
+      }
+    })
+
+    res.send({
+      status: 1,
+      msg: "获取数据成功",
+      data:{
+        examInfo
+      }
+    });
+   
+  } catch (error) {
+    console.log(error);
+    
+    res.send({
+      status: 0,
+      msg: "未知错误"
+    });
+  }
+  
+}
+
 const addExam = async (req,res) => {
   const id = req.session.teacherId
   // const id = '10086'
@@ -969,6 +1040,210 @@ const changeScore = async (req,res) => {
   }
 }
 
+// 获取科目
+const getSubjectByProfessionIds = async (req,res) => {
+  const id = req.session.teacherId
+  // const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  try {
+    let {ids,page,pageSize} = req.query
+  
+    idArr = ids.split(',')
+    let len1 = idArr.length
+    let sql = `
+      select *
+      from subject
+    `
+
+    let result = await db.base(sql, []);
+    
+    let subjectList
+    if(!ids || ids === ''){
+      subjectList = result
+    }else{
+      subjectList = []
+      result.forEach(ele=>{
+      let professionIds = ele.professionIds.split(',')
+      let len2 = professionIds.length
+      let set = new Set([...professionIds,...idArr])
+      
+      if(set.size < len1+len2){    
+        subjectList.push(ele)
+      }
+    })
+    }
+    let total = subjectList.length
+
+    let startIndex = (page-1)*pageSize
+    let endIndex = startIndex + pageSize
+    subjectList = subjectList.slice(startIndex,endIndex)
+
+    res.send({
+      status :1,
+      msg:'数据获取成功',
+      data:{
+        subjectList,
+        total
+      }
+    })
+  } catch (error) {
+    res.send({
+      status :0,
+      msg:'数据获取失败',
+    })
+  }
+  
+  
+}
+
+// 获取专业
+const getProfessions = async (req,res) => {
+  const id = req.session.teacherId
+  // const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  try {
+    
+    sql = `
+      select *
+      from profession
+    `
+    let professionList = await db.base(sql, []);
+    
+    res.send({
+      status :1,
+      msg:'数据获取成功',
+      data:professionList,
+
+    })
+  } catch (error) {
+    res.send({
+      status :0,
+      msg:'数据获取失败',
+    })
+  }
+  
+  
+}
+
+// 添加科目
+const addSubject = async (req,res) => {
+  const id = req.session.teacherId
+  // const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  try {
+    let {name,professionIds} = req.body
+  
+    professionIds = professionIds.join(',')
+    let sql = `
+    insert into subject(name,professionIds)
+    value(?,?)
+    `
+
+    await db.base(sql, [name,professionIds]);
+    res.send({
+      status :1,
+      msg:'数据添加成功'
+    })
+  } catch (error) {
+    res.send({
+      status :0,
+      msg:'数据添加失败',
+    })
+  }
+  
+  
+}
+
+// 删除科目
+const removeSubject = async (req,res) => {
+  const id = req.session.teacherId
+  // const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  try {
+    let {id} = req.params
+    
+    let sql = `
+    delete from subject
+    where id=?
+    `
+
+    await db.base(sql, [id]);
+    res.send({
+      status :1,
+      msg:'数据删除成功'
+    })
+  } catch (error) {
+    res.send({
+      status :0,
+      msg:'数据删除失败',
+    })
+  }
+  
+  
+}
+
+// 修改科目
+const changeSubject = async (req,res) => {
+  const id = req.session.teacherId
+  // const id = '10086'
+  if(!id){
+    res.send({
+      status: 0,
+      msg: "获取用户信息失败"
+    });
+    return;
+  }
+  try {
+    let {id} = req.params
+    let {name,professionIds} = req.body
+    
+    let sql = `
+    update subject
+    set name=?,professionIds=?
+    where id=?
+    `
+
+    await db.base(sql, [name,professionIds,id]);
+    res.send({
+      status :1,
+      msg:'数据修改成功'
+    })
+  } catch (error) {
+    res.send({
+      status :0,
+      msg:'数据修改失败',
+    })
+  }
+  
+  
+}
+
+
+
 module.exports = {
   login,
   changePassword,
@@ -990,5 +1265,11 @@ module.exports = {
   addExam,
   getScore,
   removeScore,
-  changeScore
+  changeScore,
+  getSubjectByProfessionIds,
+  getProfessions,
+  addSubject,
+  removeSubject,
+  changeSubject,
+  getExamInfoById
 }

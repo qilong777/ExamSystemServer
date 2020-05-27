@@ -50,4 +50,14 @@ router.post("/score", service.getScore);
 router.delete("/score/:studentId/:examId", service.removeScore);
 
 router.put("/score/:studentId/:examId", service.changeScore);
+
+router.get("/profession", service.getProfessions);
+
+router.get("/subject", service.getSubjectByProfessionIds);
+router.post("/subject", service.addSubject);
+router.delete("/subject/:id", service.removeSubject);
+router.put("/subject/:id", service.changeSubject);
+
+router.get("/exam/:id", service.getExamInfoById);
+
 module.exports = router;
