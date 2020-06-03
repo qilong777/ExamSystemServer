@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50719
 File Encoding         : 65001
 
-Date: 2020-05-13 23:39:23
+Date: 2020-06-04 00:20:51
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -67,13 +67,14 @@ CREATE TABLE `exam` (
   PRIMARY KEY (`id`),
   KEY `subjectId1` (`subjectId`),
   CONSTRAINT `subjectId1` FOREIGN KEY (`subjectId`) REFERENCES `subject` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 -- Records of exam
 -- ----------------------------
 INSERT INTO `exam` VALUES ('19', '1', '1,2,3,4,5', '高等数学1.xlsx', '60');
 INSERT INTO `exam` VALUES ('20', '2', '1,2,3,4,5,6', '高等数学2.xlsx', '90');
+INSERT INTO `exam` VALUES ('21', '6', '1,2,3,4', '计算机网络.xlsx', '60');
 
 -- ----------------------------
 -- Table structure for exam_info
@@ -93,7 +94,8 @@ CREATE TABLE `exam_info` (
 -- Records of exam_info
 -- ----------------------------
 INSERT INTO `exam_info` VALUES ('201611621123', '19', '100');
-INSERT INTO `exam_info` VALUES ('201611621123', '20', '100');
+INSERT INTO `exam_info` VALUES ('201611621123', '20', '60');
+INSERT INTO `exam_info` VALUES ('201611621123', '21', '80');
 INSERT INTO `exam_info` VALUES ('201611621124', '19', '100');
 INSERT INTO `exam_info` VALUES ('201611621223', '19', '100');
 INSERT INTO `exam_info` VALUES ('201611621223', '20', '60');
@@ -141,7 +143,7 @@ INSERT INTO `message_info` VALUES ('3', '201611621102', '5', '0');
 INSERT INTO `message_info` VALUES ('4', '201611621102', '6', '0');
 INSERT INTO `message_info` VALUES ('5', '201611621103', '5', '0');
 INSERT INTO `message_info` VALUES ('6', '201611621103', '6', '0');
-INSERT INTO `message_info` VALUES ('7', '201611621123', '5', '1');
+INSERT INTO `message_info` VALUES ('7', '201611621123', '5', '0');
 INSERT INTO `message_info` VALUES ('8', '201611621123', '6', '1');
 INSERT INTO `message_info` VALUES ('9', '201611621124', '5', '0');
 INSERT INTO `message_info` VALUES ('10', '201611621124', '6', '0');
@@ -168,11 +170,11 @@ CREATE TABLE `practice` (
 -- ----------------------------
 -- Records of practice
 -- ----------------------------
-INSERT INTO `practice` VALUES ('1', '1', '1', '3+4=？', '1$$2$$7$$4', 'C', '3+4=7，答错是猪');
-INSERT INTO `practice` VALUES ('3', '1', '1', '1+2=？', '1$$2$$3$$4', 'C', '1+2=3，答错是猪');
-INSERT INTO `practice` VALUES ('4', '2', '2', '1+2=？', '1$$3$$3$$4', 'BC', '1+2=3，答错是猪');
-INSERT INTO `practice` VALUES ('5', '2', '3', '1+2=$$', '', '3', '1+2=3，答错是猪');
-INSERT INTO `practice` VALUES ('6', '2', '3', '1+2=$$', '', '3', '1+2=3，答错是猪');
+INSERT INTO `practice` VALUES ('1', '5', '1', '下列对USB接口的叙述错误的是', '它是一种调整的可以连接多个设备的串行接口$$它符合即插即用规范，可以热插拔设备$$一个USB接口最多连接127个设备$$常用外设，如鼠标，是不使用USB接口的', 'D', '无');
+INSERT INTO `practice` VALUES ('3', '5', '1', '关于虚拟内存管理正确的是（）', '进程的机器代码内存页是不可以交换到磁盘的$$只有进程用于存储数据的数据页才可以交换到磁盘$$为了保证进程的正常运行，进程的执行代码是一次性加载到内存里的$$为了节省物理内存使用，进程不是一次性加载到内存中', 'D', '无');
+INSERT INTO `practice` VALUES ('4', '5', '1', '下列选项中，会导致进程从执行态变为就绪态的事件是', '执行P(wait)操作$$申请内存失败$$启动I/O设备$$被高优先级进程抢占', 'D', 'P(wait)操作表示进程请求某一资源，A、B和C都因为请求某一资源会进入阻塞态，而D只是被剥夺了处理机资源，进入就绪态，一旦得到处理机即可运行。');
+INSERT INTO `practice` VALUES ('5', '6', '1', '在Internet中，一个路由器的路由表通常是包含（ ）。', '目的网络和到达目的网络的完整路径$$所有的目的主机和到达目的主机的完整路径$$目的网络和到达目的网络路径的下一个路由器IP地址$$互联网中所有路由器的IP地址', 'C', '可以用route命令查看路由表，主要包括网络地址、子网掩码、下一跳');
+INSERT INTO `practice` VALUES ('6', '6', '1', '哪一种服务用来将域名转换成IP地址（）。', 'DNS$$FTP$$FTP$$ARP', 'A', '无');
 INSERT INTO `practice` VALUES ('7', '1', '1', '2+2=?', '1$$2$$3$$4', 'D', '2+2=4');
 INSERT INTO `practice` VALUES ('8', '1', '2', '2+2=?', '1$$2$$4$$4', 'CD', '2+2=4');
 INSERT INTO `practice` VALUES ('9', '2', '3', '2+2=$$', '', '4', '2+2=4');
@@ -192,19 +194,17 @@ CREATE TABLE `practice_info` (
   KEY `practiceId` (`practiceId`) USING BTREE,
   CONSTRAINT `practiceId` FOREIGN KEY (`practiceId`) REFERENCES `practice` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `studentId` FOREIGN KEY (`studentId`) REFERENCES `student` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 -- Records of practice_info
 -- ----------------------------
-INSERT INTO `practice_info` VALUES ('16', '201611621123', '6', '0', '3');
-INSERT INTO `practice_info` VALUES ('17', '201611621123', '5', '0', '3');
+INSERT INTO `practice_info` VALUES ('16', '201611621123', '6', '1', '');
 INSERT INTO `practice_info` VALUES ('18', '201611621123', '1', '1', '');
 INSERT INTO `practice_info` VALUES ('20', '201611621123', '3', '1', '');
-INSERT INTO `practice_info` VALUES ('21', '201611621123', '4', '1', '');
+INSERT INTO `practice_info` VALUES ('21', '201611621123', '4', '1', 'A');
 INSERT INTO `practice_info` VALUES ('22', '201611621123', '8', '0', 'CD');
-INSERT INTO `practice_info` VALUES ('23', '201611621123', '9', '1', '');
-INSERT INTO `practice_info` VALUES ('24', '201611621123', '7', '1', '');
+INSERT INTO `practice_info` VALUES ('25', '201611621123', '5', '0', 'C');
 
 -- ----------------------------
 -- Table structure for profession
@@ -275,13 +275,13 @@ CREATE TABLE `subject` (
 -- ----------------------------
 -- Records of subject
 -- ----------------------------
-INSERT INTO `subject` VALUES ('1', '高等数学1', '1');
-INSERT INTO `subject` VALUES ('2', '高等数学2', '1');
-INSERT INTO `subject` VALUES ('3', '大学英语1', '1');
+INSERT INTO `subject` VALUES ('1', '高等数学1', '1,2,3,4,5');
+INSERT INTO `subject` VALUES ('2', '高等数学2', '1,2,3,4,5');
+INSERT INTO `subject` VALUES ('3', '大学英语1', '1,2,3,4,5');
 INSERT INTO `subject` VALUES ('4', '数据结构', '1');
 INSERT INTO `subject` VALUES ('5', '操作系统', '1');
 INSERT INTO `subject` VALUES ('6', '计算机网络', '1');
-INSERT INTO `subject` VALUES ('7', '计算机组成原理', '1');
+INSERT INTO `subject` VALUES ('7', '计算机组成原理', '1,2,3');
 
 -- ----------------------------
 -- Table structure for teacher
